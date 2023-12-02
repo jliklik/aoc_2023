@@ -2,9 +2,11 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use regex::Regex;
+use std::collections::BinaryHeap;
 
 pub struct Day1 {
-  pub answer: i64
+  pub part1: i64,
+  pub part2: i64
 }
 
 impl Day1 {
@@ -12,11 +14,12 @@ impl Day1 {
   pub fn new<P>(path_to_input: P) -> Self 
   where P: AsRef<Path>, {
     Self {
-      answer: Self::process(path_to_input)
+      part1: Self::part1(&path_to_input),
+      part2: Self::part2(&path_to_input)
     }
   }
 
-  fn process<P>(path_to_input: P) -> i64
+  fn part1<P>(path_to_input: P) -> i64
   where P: AsRef<Path>, {
       
       let mut answer: i64 = 0;
@@ -38,6 +41,52 @@ impl Day1 {
       }
 
       answer
+  }
+
+  fn part2<P>(path_to_input: P) -> i64
+  where P: AsRef<Path>, {
+
+    let numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
+    let mut answer: i64 = 0;
+    if let Ok(lines) = Self::read_lines(path_to_input) {
+      // Consumes the iterator, returns an (Optional) String
+      for line in lines {
+        if let Ok(ip) = line {
+          let mut last_num_heap = BinaryHeap::<(i32, i32)>::new();
+          let mut first_num_heap= BinaryHeap::<(i32, i32)>::new();
+          for number in numbers {
+            let formatted = format!(r"({})", number);
+            let re = Regex::new(formatted.as_str()).unwrap();
+            for m in re.find_iter(ip.clone().as_str()) {
+              let val = match m.as_str() {
+                "zero" => "0",
+                "one" => "1",
+                "two" => "2",
+                "three" => "3",
+                "four" => "4",
+                "five" => "5",
+                "six" => "6",
+                "seven" => "7",
+                "eight" => "8",
+                "nine" => "9",
+                _any => _any 
+              };
+              first_num_heap.push((m.start() as i32 * -1, val.parse::<i32>().unwrap()));
+              last_num_heap.push((m.start() as i32, val.parse::<i32>().unwrap()));
+            }
+          }
+          let (_pos, first) = first_num_heap.peek().unwrap();
+          let (_pos, last) = last_num_heap.peek().unwrap();
+          let number = format!("{first}{last}");
+          println!("{number}"); 
+          let number = number.parse::<i64>().unwrap();
+          answer = answer + number;
+        }
+      }
+    }
+
+    answer
   }
 
   fn find_first(ip: String) -> String {
