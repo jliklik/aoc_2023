@@ -79,7 +79,7 @@ impl Day1 {
           let (_pos, first) = first_num_heap.peek().unwrap();
           let (_pos, last) = last_num_heap.peek().unwrap();
           let number = format!("{first}{last}");
-          println!("{number}"); 
+          // println!("{number}"); 
           let number = number.parse::<i64>().unwrap();
           answer = answer + number;
         }
