@@ -24,7 +24,7 @@ impl Day3 {
     let mat = Self::read_into_matrix(path_to_input);
     let m = mat.len();
     let n = mat[0].len();
-    println!("rows: {}, cols: {}", m, n);
+    // println!("rows: {}, cols: {}", m, n);
     // Assumption: rows are of consistent length 
     for i in 0..m {
       let row = mat[i].clone();
@@ -53,9 +53,9 @@ impl Day3 {
            next_row[sidx..eidx].iter().any(|el| !matches!(el, '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '.'))
         {
           let num = found_match.as_str().to_string().parse::<i32>().unwrap();
-          if i == 0 || i == (m-1) {
-            println!("{}", num);
-          } 
+          // if i == 0 || i == (m-1) {
+          //   println!("{}", num);
+          // } 
           answer = answer + num;
         }
       }
