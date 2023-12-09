@@ -67,7 +67,7 @@ impl Day4 {
             } else {
               acc
             });
-          println!("card id: {}, points: {}", id, points);
+          // println!("card id: {}, points: {}", id, points);
           answer = answer + points;
         }
       }
@@ -145,7 +145,7 @@ impl Day4 {
           Some(&cards) => cards,
           None => 0
         };
-        println!{"card {} has {} copies", card_id, num_copies};
+        // println!{"card {} has {} copies", card_id, num_copies};
         answer = answer + num_copies;
       }
     }
