@@ -38,7 +38,7 @@ impl Day7 {
     }
   }
 
-  fn char_to_val(c: &char) -> u8 {
+  fn char_to_val_part1(c: &char) -> u8 {
     match c {
       '2' => 2,
       '3' => 3,
@@ -50,6 +50,25 @@ impl Day7 {
       '9' => 9,
       'T' => 10,
       'J' => 11,
+      'Q' => 12,
+      'K' => 13,
+      'A' => 14,
+      _ => 0
+    }
+  }
+
+  fn char_to_val_part2(c: &char) -> u8 {
+    match c {
+      '2' => 2,
+      '3' => 3,
+      '4' => 4,
+      '5' => 5,
+      '6' => 6,
+      '7' => 7,
+      '8' => 8,
+      '9' => 9,
+      'T' => 10,
+      'J' => 1,
       'Q' => 12,
       'K' => 13,
       'A' => 14,
@@ -96,10 +115,9 @@ impl Day7 {
     }
   }
 
-  fn find_repeats(mut sorted: Vec<char>) -> Vec<(u8, u8)> {
+  fn find_repeats_part1(mut sorted: Vec<char>) -> Vec<(u8, u8)> {
     let mut count = 1;
     let mut char_counts = Vec::new();
-    let mut prev_char = '?';
     let l = sorted.len();
     let mut curr = sorted.pop();
     let mut next = curr.clone();
@@ -114,14 +132,14 @@ impl Day7 {
               } else {
                 // println!("sorted: {}, count: {} char: {}", 
                 //   sorted.clone().into_iter().collect::<String>(), count, c1);
-                char_counts.push((count, Self::char_to_val(&c1)));
+                char_counts.push((count, Self::char_to_val_part1(&c1)));
                 count = 1;
               }
             }
             None => {
               // println!("sorted: {}, count: {} char: {}", 
               //   sorted.clone().into_iter().collect::<String>(), count, c1);
-              char_counts.push((count, Self::char_to_val(&c1)));
+              char_counts.push((count, Self::char_to_val_part1(&c1)));
             }
           }
         }
@@ -135,11 +153,67 @@ impl Day7 {
     char_counts
   }
 
-  fn categorize_type(hand: &str) -> (HandTypes, String) {
-    let mut chars: Vec<char> = hand.chars().collect();
-    chars.sort_by(|a, b| Self::char_to_val(a).cmp(&(Self::char_to_val(b))));
-    let sorted = chars.clone().into_iter().collect::<String>();
-    let mut char_counts: Vec<(u8, u8)> = Self::find_repeats(chars.clone());
+  fn find_repeats_part2(mut sorted: Vec<char>) -> Vec<(u8, u8)> {
+
+    let mut joker_count = 0;
+
+    let mut count = 1;
+    let mut char_counts = Vec::new();
+    let l = sorted.len();
+    let mut curr = sorted.pop();
+    let mut next = curr.clone();
+    for i in 0..l {
+      match curr {
+        Some(c1) => {
+          next = sorted.pop();
+          match next {
+            Some(c2) => {
+              if c1 == c2 {
+                count = count + 1
+              } else {
+                // println!("sorted: {}, count: {} char: {}", 
+                //   sorted.clone().into_iter().collect::<String>(), count, c1);
+                if c1 == 'J' {
+                  joker_count = count;
+                } else {
+                  char_counts.push((count, Self::char_to_val_part1(&c1)));
+                }
+                count = 1;
+              }
+            }
+            None => {
+              // println!("sorted: {}, count: {} char: {}", 
+              //   sorted.clone().into_iter().collect::<String>(), count, c1);
+              if c1 == 'J' {
+                joker_count = count;
+              } else {
+                char_counts.push((count, Self::char_to_val_part1(&c1)));
+              }
+            }
+          }
+        }
+        None => ()
+      }
+      curr = next
+    }
+
+    if char_counts.len() == 0 && joker_count == 5 {
+      // edge case where all jokers - then no values pushed
+      char_counts.push((joker_count, Self::char_to_val_part1(&'J')));
+    } else {
+      char_counts.sort_by_key(|&(count, char)| (count, char));
+      // Add joker count to the first elem count
+      char_counts.reverse();
+      let (top_count, top_value_char) = char_counts[0];
+      std::mem::replace(&mut char_counts[0], (top_count + joker_count, top_value_char));
+      char_counts.reverse();
+    }
+    
+    dbg!(&char_counts);
+    char_counts
+  }
+
+  fn parse_char_counts(mut char_counts: Vec<(u8, u8)>) -> HandTypes {
     let hand_type = match char_counts.pop() {
       Some((5, c1)) => {
         println!("5 of a kind!");
@@ -209,6 +283,25 @@ impl Day7 {
         HandTypes::Unknown  
       }   
     };
+    hand_type
+  }
+
+  fn categorize_type_part1(hand: &str) -> (HandTypes, String) {
+    let mut chars: Vec<char> = hand.chars().collect();
+    chars.sort_by(|a, b| Self::char_to_val_part1(a).cmp(&(Self::char_to_val_part1(b))));
+    let sorted = chars.clone().into_iter().collect::<String>();
+    let mut char_counts: Vec<(u8, u8)> = Self::find_repeats_part1(chars.clone());
+    let hand_type = Self::parse_char_counts(char_counts);
+    // type, typedata, hand, bid
+    (hand_type, sorted)
+  }
+
+  fn categorize_type_part2(hand: &str) -> (HandTypes, String) {
+    let mut chars: Vec<char> = hand.chars().collect();
+    chars.sort_by(|a, b| Self::char_to_val_part1(a).cmp(&(Self::char_to_val_part1(b))));
+    let sorted = chars.clone().into_iter().collect::<String>();
+    let mut char_counts: Vec<(u8, u8)> = Self::find_repeats_part2(chars.clone());
+    let hand_type = Self::parse_char_counts(char_counts);
     // type, typedata, hand, bid
     (hand_type, sorted)
   }
@@ -230,7 +323,7 @@ impl Day7 {
           let Some(hand) = v.pop_front() else {
             panic!("Could not parse hand!");
           };
-          let (hand_type, sorted) = Self::categorize_type(hand);
+          let (hand_type, sorted) = Self::categorize_type_part1(hand);
           // hands.push((hand_type, bid, sorted));
           hands.push((hand_type, bid, hand.to_string()));
         }
@@ -245,11 +338,11 @@ impl Day7 {
         let (c1, c2, c3, c4, c5) = (v[0], v[1], v[2], v[3], v[4]);
         (
           Self::hand_type_to_val(h.0), 
-          Self::char_to_val(&c1), 
-          Self::char_to_val(&c2), 
-          Self::char_to_val(&c3), 
-          Self::char_to_val(&c4), 
-          Self::char_to_val(&c5)
+          Self::char_to_val_part1(&c1), 
+          Self::char_to_val_part1(&c2), 
+          Self::char_to_val_part1(&c3), 
+          Self::char_to_val_part1(&c4), 
+          Self::char_to_val_part1(&c5)
         )
       }
     );
@@ -267,8 +360,52 @@ impl Day7 {
 
   fn part2<P>(path_to_input: P) -> i32
   where P: AsRef<Path>, {
+    let mut total_sum = 0;
+    let mut hands = Vec::<(HandTypes, i32, String)>::new();
     
-    0
+    if let Ok(lines) = Self::read_lines(path_to_input) {
+      // Consumes the iterator, returns an (Optional) String
+      for line in lines {
+        if let Ok(l) = line {
+          let mut v = l.split(" ").collect::<VecDeque<&str>>();
+          let Some(bid) = v.pop_back() else {
+            panic!("Could not parse bid!");
+          };
+          let bid = bid.to_string().parse::<i32>().unwrap();
+          let Some(hand) = v.pop_front() else {
+            panic!("Could not parse hand!");
+          };
+          let (hand_type, sorted) = Self::categorize_type_part2(hand);
+          // hands.push((hand_type, bid, sorted));
+          hands.push((hand_type, bid, hand.to_string()));
+        }
+      }
+    }
+
+    //hands.sort_unstable_by_key(|h| Self::hand_type_to_comparator(h.0));
+    hands.sort_unstable_by_key(|h| 
+      {
+        let v = h.2.chars().collect::<Vec<char>>();
+        let (c1, c2, c3, c4, c5) = (v[0], v[1], v[2], v[3], v[4]);
+        (
+          Self::hand_type_to_val(h.0), 
+          Self::char_to_val_part2(&c1), 
+          Self::char_to_val_part2(&c2), 
+          Self::char_to_val_part2(&c3), 
+          Self::char_to_val_part2(&c4), 
+          Self::char_to_val_part2(&c5)
+        )
+      }
+    );
+    for h in &hands {
+      println!("hand: {}, bid: {}", h.2, h.1);
+    }
+    let (total_ranks, total_sum) = hands.iter().fold((1, 0), |(rank, sum), (handtype, bid, hand) | {
+      (rank + 1, sum + rank * bid)
+    });
+    println!("total_sum: {}", total_sum);
+
+    total_sum
   }
 
   fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
