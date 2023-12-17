@@ -64,7 +64,7 @@ impl Day6 {
           winning_combinations = winning_combinations + 1;
         }
       }
-      println!("total_time: {total_time}, dist to beat: {dist} winning_combinations: {winning_combinations}");
+      // println!("total_time: {total_time}, dist to beat: {dist} winning_combinations: {winning_combinations}");
       answer = answer * winning_combinations;
     }
     
@@ -102,7 +102,7 @@ impl Day6 {
         winning_combinations = winning_combinations + 1;
       }
     }
-    println!("total_time: {total_time}, dist to beat: {distance_to_beat} winning_combinations: {winning_combinations}");
+    //println!("total_time: {total_time}, dist to beat: {distance_to_beat} winning_combinations: {winning_combinations}");
     
     winning_combinations
   }

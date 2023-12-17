@@ -4,6 +4,7 @@ mod day3;
 mod day4;
 mod day5;
 mod day6;
+mod day7;
 
 use day1::Day1;
 use day2::Day2;
@@ -11,6 +12,7 @@ use day3::Day3;
 use day4::Day4;
 use day5::Day5;
 use day6::Day6;
+use day7::Day7;
 
 fn main() {
     let aoc1 = Day1::new("./inputs/day1.input".to_string());
@@ -36,4 +38,8 @@ fn main() {
     let aoc6 = Day6::new("./inputs/day6.input".to_string());
     println!("day6 - part1: {}", aoc6.part1);
     println!("day6 - part2: {}", aoc6.part2);
+
+    let aoc7 = Day7::new("./inputs/day7.input".to_string());
+    println!("day7 - part1: {}", aoc7.part1);
+    println!("day7 - part2: {}", aoc7.part2);
 }
