@@ -57,28 +57,41 @@ impl Day7 {
     }
   }
 
+  fn hand_type_to_val(hand_type: HandTypes) -> u8 {
+    match hand_type {
+      HandTypes::FiveOfAKind(_) => std::u8::MAX,
+      HandTypes::FourOfAKind(_, _) => std::u8::MAX - 1,
+      HandTypes::FullHouse(_, _) => std::u8::MAX - 2,
+      HandTypes::ThreeOfAKind(_, _, _) => std::u8::MAX - 3,
+      HandTypes::TwoPair(_, _, _) => std::u8::MAX - 4,
+      HandTypes::OnePair(_, _, _, _) => std::u8::MAX - 5,
+      HandTypes::HighCard(_, _, _, _, _) => std::u8::MAX - 6,
+      HandTypes::Unknown => 0
+    }
+  }
+
   fn hand_type_to_comparator(hand_type: HandTypes) -> (u8, u8, u8, u8, u8) {
 
     match hand_type {
       HandTypes::Unknown => (0, 0, 0, 0, 0),
       HandTypes::HighCard(c1, c2, c3, c4, c5) => (c1, c2, c3, c4, c5),
       HandTypes::OnePair(c1, c2, c3, c4) => {
-        (255-5, c1, c2, c3, c4)
+        (Self::hand_type_to_val(hand_type), c1, c2, c3, c4)
       }
       HandTypes::TwoPair(c1, c2, c3) => {
-        (255-4, 255, c1, c2, c3)
+        (Self::hand_type_to_val(hand_type), std::u8::MAX, c1, c2, c3)
       }
       HandTypes::ThreeOfAKind(c1, c2, c3) => {
-        (255-3, 255, c1, c2, c3)
+        (Self::hand_type_to_val(hand_type), std::u8::MAX, c1, c2, c3)
       }
       HandTypes::FullHouse(c1, c2) => {
-        (255-2, 255, 255, c1, c2)
+        (Self::hand_type_to_val(hand_type), std::u8::MAX, std::u8::MAX, c1, c2)
       }
       HandTypes::FourOfAKind(c1, c2) => {
-        (255-1, 255, 255, c1, c2)
+        (Self::hand_type_to_val(hand_type), std::u8::MAX, std::u8::MAX, c1, c2)
       }
       HandTypes::FiveOfAKind(c1) => {
-        (255, 255, 255, 255, c1)
+        (Self::hand_type_to_val(hand_type), std::u8::MAX, std::u8::MAX, std::u8::MAX, c1)
       }
     }
   }
@@ -218,13 +231,28 @@ impl Day7 {
             panic!("Could not parse hand!");
           };
           let (hand_type, sorted) = Self::categorize_type(hand);
-          hands.push((hand_type, bid, sorted));
+          // hands.push((hand_type, bid, sorted));
+          hands.push((hand_type, bid, hand.to_string()));
         }
       }
 
     }
 
-    hands.sort_unstable_by_key(|h| Self::hand_type_to_comparator(h.0));
+    //hands.sort_unstable_by_key(|h| Self::hand_type_to_comparator(h.0));
+    hands.sort_unstable_by_key(|h| 
+      {
+        let v = h.2.chars().collect::<Vec<char>>();
+        let (c1, c2, c3, c4, c5) = (v[0], v[1], v[2], v[3], v[4]);
+        (
+          Self::hand_type_to_val(h.0), 
+          Self::char_to_val(&c1), 
+          Self::char_to_val(&c2), 
+          Self::char_to_val(&c3), 
+          Self::char_to_val(&c4), 
+          Self::char_to_val(&c5)
+        )
+      }
+    );
     for h in &hands {
       println!("hand: {}, bid: {}", h.2, h.1);
     }
