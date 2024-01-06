@@ -1,35 +1,29 @@
 use regex::Regex;
+use crate::aoc::{Aoc, AocRes};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
 pub struct Day2 {
-    pub part1: i64,
-    pub part2: i64,
+    path_to_input: String
 }
 
 const RED_LIMIT: i32 = 12;
 const GREEN_LIMIT: i32 = 13;
 const BLUE_LIMIT: i32 = 14;
 
-impl Day2 {
-    pub fn new<P>(path_to_input: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
-        Self {
-            part1: Self::part1(&path_to_input),
-            part2: Self::part2(&path_to_input),
+impl Aoc for Day2 {
+
+    fn new(path_to_input: &String) -> Self {
+        Self{
+            path_to_input: path_to_input.clone()
         }
     }
 
-    fn part1<P>(path_to_input: P) -> i64
-    where
-        P: AsRef<Path>,
-    {
+    fn part1(&self) -> AocRes {
         let mut answer: i64 = 0;
-        if let Ok(lines) = Self::read_lines(path_to_input) {
+        if let Ok(lines) = Self::read_lines(&self.path_to_input) {
             // Consumes the iterator, returns an (Optional) String
             for line in lines {
                 if let Ok(ip) = line {
@@ -82,8 +76,16 @@ impl Day2 {
             }
         }
 
-        answer
+        AocRes::Int64(answer)
     }
+
+    fn part2(&self) -> AocRes {
+       AocRes::Int64(0)
+       // TODO: complete this at some point...
+    }
+}
+
+impl Day2 {
 
     fn check_round_ok(parsed_round: Vec<(String, i32)>) -> bool {
         for (color, num) in parsed_round {
@@ -108,13 +110,6 @@ impl Day2 {
         }
 
         true
-    }
-
-    fn part2<P>(path_to_input: P) -> i64
-    where
-        P: AsRef<Path>,
-    {
-        0
     }
 
     // The output is wrapped in a Result to allow matching on errors

@@ -8,6 +8,7 @@ mod day6;
 mod day7;
 mod day8;
 
+use aoc::Aoc;
 use day1::Day1;
 use day2::Day2;
 use day3::Day3;
@@ -19,13 +20,16 @@ use day8::Day8;
 
 fn main() {
 
-    let aoc1 = Day1::new("./inputs/day1.input".to_string());
-    println!("day1 - part1: {}", aoc1.part1);
-    println!("day1 - part2: {}", aoc1.part2);
+    let mut aoc = Vec::<Box<dyn Aoc>>::new();
 
-    let aoc2 = Day2::new("./inputs/day2.input".to_string());
-    println!("day2 - part1: {}", aoc2.part1);
-    println!("day2 - part2: {}", aoc2.part2);
+    aoc.push(Box::new(Day1::new(&"./inputs/day1.input".to_string())));
+    aoc.push(Box::new(Day2::new(&"./inputs/day2.input".to_string())));
+
+    aoc.into_iter().fold(1, |acc, el| {
+        println!("day{} - part1: {}", acc, el.part1());
+        println!("day{} - part2: {}", acc, el.part2());
+        acc + 1
+    });
 
     let aoc3 = Day3::new("./inputs/day3.input".to_string());
     println!("day3 - part1: {}", aoc3.part1);

@@ -1,4 +1,4 @@
-use crate::aoc::Aoc;
+use crate::aoc::{Aoc, AocRes};
 use regex::Regex;
 use std::collections::BinaryHeap;
 use std::fs::File;
@@ -6,14 +6,20 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 pub struct Day1 {
-    pub part1: i64,
-    pub part2: i64,
+    path_to_input: String
 }
 
-impl Aoc<&String, i64> for Day1 {
-    fn part1(path_to_input: &String) -> i64 {
+impl Aoc for Day1 {
+
+    fn new(path_to_input: &String) -> Self {
+        Self{
+            path_to_input: path_to_input.clone()
+        }
+    }
+
+    fn part1(&self) -> AocRes {
         let mut answer: i64 = 0;
-        if let Ok(lines) = Self::read_lines(path_to_input) {
+        if let Ok(lines) = Self::read_lines(&self.path_to_input) {
             // Consumes the iterator, returns an (Optional) String
             for line in lines {
                 if let Ok(ip) = line {
@@ -30,16 +36,16 @@ impl Aoc<&String, i64> for Day1 {
             }
         }
 
-        answer
+        AocRes::Int64(answer)
     }
 
-    fn part2(path_to_input: &String) -> i64 {
+    fn part2(&self) -> AocRes {
         let numbers = [
             "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "0",
             "1", "2", "3", "4", "5", "6", "7", "8", "9",
         ];
         let mut answer: i64 = 0;
-        if let Ok(lines) = Self::read_lines(path_to_input) {
+        if let Ok(lines) = Self::read_lines(&self.path_to_input) {
             // Consumes the iterator, returns an (Optional) String
             for line in lines {
                 if let Ok(ip) = line {
@@ -77,17 +83,11 @@ impl Aoc<&String, i64> for Day1 {
             }
         }
 
-        answer
+        AocRes::Int64(answer)
     }
 }
 
 impl Day1 {
-    pub fn new(path_to_input: String) -> Self {
-        Self {
-            part1: Self::part1(&path_to_input),
-            part2: Self::part2(&path_to_input),
-        }
-    }
 
     fn find_first(ip: String) -> String {
         let re = Regex::new(r"(\d)").unwrap();

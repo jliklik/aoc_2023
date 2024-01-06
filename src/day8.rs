@@ -97,7 +97,7 @@ impl DesertMap {
         let mut steps_vector = Vec::new();
         for start_key in &start_keys {
             let steps = Self::find_path(dmap, start_key, directions, &ends_with_z);
-            dbg!((start_key, steps));
+            // dbg!((start_key, steps));
             steps_vector.push(steps as u64);
         }
 
@@ -113,8 +113,8 @@ impl DesertMap {
             gcd = Self::gcd(a, b);
             lcm = (lcm as u128) * (b as u128) / gcd as u128;
             a = gcd;
-            println!("gcd: {}", gcd);
-            println!("lcm: {}", lcm);
+            // println!("gcd: {}", gcd);
+            // println!("lcm: {}", lcm);
         }
         lcm as u64
     }
@@ -234,21 +234,21 @@ mod tests {
     #[test]
     fn part1_works_on_sample_input() {
         let part1 = Day8::part1("./inputs/day8_test.input");
-        dbg!(part1);
+        // dbg!(part1);
         assert!(part1 == 6);
     }
 
     #[test]
     fn part1_works_on_sample_input_2() {
         let part1 = Day8::part1("./inputs/day8_test2.input");
-        dbg!(part1);
+        // dbg!(part1);
         assert!(part1 == 2);
     }
 
     #[test]
     fn part2_works_on_sample_input() {
         let part2 = Day8::part2("./inputs/day8_p2_test.input");
-        dbg!(part2);
+        // dbg!(part2);
         assert!(part2 == 6);
     }
 }
