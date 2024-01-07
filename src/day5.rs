@@ -1,3 +1,4 @@
+use crate::aoc::{Aoc, AocRes};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -6,41 +7,34 @@ use std::sync::mpsc::channel;
 use std::thread::spawn;
 
 pub struct Day5 {
-    pub part1: u64,
-    pub part2: u64,
+    path_to_input: String
 }
 
-impl Day5 {
-    pub fn new<P>(path_to_input: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
+impl Aoc for Day5 {
+
+    fn new(path_to_input: &String) -> Self {
         Self {
-            part1: Self::part1(&path_to_input),
-            part2: Self::part2(&path_to_input),
+            path_to_input: path_to_input.clone()
         }
     }
 
-    fn part1<P>(path_to_input: P) -> u64
-    where
-        P: AsRef<Path>,
-    {
+    fn part1(&self) -> AocRes {
         let mut maps = VecDeque::<VecDeque<(u64, u64, u64)>>::new();
-        maps.push_back(Self::parse_ranges(&path_to_input, "seed-to-soil"));
-        maps.push_back(Self::parse_ranges(&path_to_input, "soil-to-fertilizer"));
-        maps.push_back(Self::parse_ranges(&path_to_input, "fertilizer-to-water"));
-        maps.push_back(Self::parse_ranges(&path_to_input, "water-to-light"));
-        maps.push_back(Self::parse_ranges(&path_to_input, "light-to-temperature"));
+        maps.push_back(Self::parse_ranges(&self.path_to_input, "seed-to-soil"));
+        maps.push_back(Self::parse_ranges(&self.path_to_input, "soil-to-fertilizer"));
+        maps.push_back(Self::parse_ranges(&self.path_to_input, "fertilizer-to-water"));
+        maps.push_back(Self::parse_ranges(&self.path_to_input, "water-to-light"));
+        maps.push_back(Self::parse_ranges(&self.path_to_input, "light-to-temperature"));
         maps.push_back(Self::parse_ranges(
-            &path_to_input,
+            &self.path_to_input,
             "temperature-to-humidity",
         ));
-        maps.push_back(Self::parse_ranges(&path_to_input, "humidity-to-location"));
+        maps.push_back(Self::parse_ranges(&self.path_to_input, "humidity-to-location"));
 
         let (sender, receiver) = channel();
         let mut handle_vec = vec![];
 
-        let seeds = Self::get_seeds(&path_to_input);
+        let seeds = Self::get_seeds(&self.path_to_input);
         let mut answers = Vec::<u64>::new();
 
         for seed in seeds {
@@ -73,8 +67,16 @@ impl Day5 {
             }
         }
 
-        answer
+        AocRes::UInt64(answer)
     }
+
+    fn part2(&self) -> AocRes {
+        let mut answer: u64 = 0;
+        AocRes::UInt64(answer)
+    }
+}
+
+impl Day5 {
 
     fn apply_chain(seed: u64, maps: &VecDeque<VecDeque<(u64, u64, u64)>>) -> u64 {
         maps.iter()
@@ -155,14 +157,6 @@ impl Day5 {
             }
         }
         bins
-    }
-
-    fn part2<P>(path_to_input: P) -> u64
-    where
-        P: AsRef<Path>,
-    {
-        let mut answer: u64 = 0;
-        answer
     }
 
     fn read_lines<P>(filename: &P) -> io::Result<io::Lines<io::BufReader<File>>>

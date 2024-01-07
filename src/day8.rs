@@ -1,3 +1,4 @@
+use crate::aoc::{Aoc, AocRes};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -143,21 +144,41 @@ impl DesertMap {
     }
 }
 
+
+
 pub struct Day8 {
-    pub part1: i32,
-    pub part2: u64,
+    path_to_input: String
+}
+
+impl Aoc for Day8 {
+
+    fn new(path_to_input: &String) -> Self {
+        Self {
+            path_to_input: path_to_input.clone()
+        }
+    }
+
+    fn part1(&self) -> AocRes {
+        let (dmap, directions) = Self::create_dmap(&self.path_to_input);
+        // DesertMap::list_nodes(&dmap);
+        fn zzz(s: &String) -> bool {
+            s.clone() == "ZZZ".to_string()
+        }
+        let ans = DesertMap::find_path(&dmap, &"AAA".to_string(), &directions, &zzz);
+
+        AocRes::Int32(ans)
+    }
+
+    fn part2(&self) -> AocRes {
+        let (dmap, directions) = Self::create_dmap(&self.path_to_input);
+        // DesertMap::list_nodes(&dmap);
+        let ans = DesertMap::find_path_2(&dmap, &directions);
+        AocRes::UInt64(ans)
+    }
+
 }
 
 impl Day8 {
-    pub fn new<P>(path_to_input: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
-        Self {
-            part1: Self::part1(&path_to_input),
-            part2: Self::part2(&path_to_input),
-        }
-    }
 
     fn create_dmap<P>(path_to_input: P) -> (DesertMap, String)
     where
@@ -190,30 +211,6 @@ impl Day8 {
         (dmap, directions)
     }
 
-    fn part1<P>(path_to_input: P) -> i32
-    where
-        P: AsRef<Path>,
-    {
-        let (dmap, directions) = Self::create_dmap(path_to_input);
-        // DesertMap::list_nodes(&dmap);
-        fn zzz(s: &String) -> bool {
-            s.clone() == "ZZZ".to_string()
-        }
-        let ans = DesertMap::find_path(&dmap, &"AAA".to_string(), &directions, &zzz);
-
-        ans
-    }
-
-    fn part2<P>(path_to_input: P) -> u64
-    where
-        P: AsRef<Path>,
-    {
-        let (dmap, directions) = Self::create_dmap(path_to_input);
-        // DesertMap::list_nodes(&dmap);
-        let ans = DesertMap::find_path_2(&dmap, &directions);
-        ans
-    }
-
     fn read_line(buffer: &mut io::BufReader<File>) -> Option<String> {
         let mut line = String::new();
         if let Ok(num_bytes) = buffer.read_line(&mut line) {
@@ -233,22 +230,29 @@ mod tests {
 
     #[test]
     fn part1_works_on_sample_input() {
-        let part1 = Day8::part1("./inputs/day8_test.input");
-        // dbg!(part1);
-        assert!(part1 == 6);
+        let day8 = Day8::new(&"./inputs/day8_test.input".to_string());
+        let AocRes::Int32(res) = day8.part1() else {
+            panic!("Failed to get result from part 1!")
+        };
+        assert!(res == 6);
     }
 
     #[test]
     fn part1_works_on_sample_input_2() {
-        let part1 = Day8::part1("./inputs/day8_test2.input");
-        // dbg!(part1);
-        assert!(part1 == 2);
+        let day8 = Day8::new(&"./inputs/day8_test2.input".to_string());
+        let AocRes::Int32(res) = day8.part1() else {
+            panic!("Failed to get result from part 1!")
+        };
+        assert!(res == 2);
     }
 
     #[test]
     fn part2_works_on_sample_input() {
-        let part2 = Day8::part2("./inputs/day8_p2_test.input");
-        // dbg!(part2);
-        assert!(part2 == 6);
+
+        let day8 = Day8::new(&"./inputs/day8_p2_test.input".to_string());
+        let AocRes::UInt64(res) = day8.part2() else {
+            panic!("Failed to get result from part 1!")
+        };
+        assert!(res == 6);
     }
 }

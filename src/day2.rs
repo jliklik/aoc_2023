@@ -1,5 +1,5 @@
-use regex::Regex;
 use crate::aoc::{Aoc, AocRes};
+use regex::Regex;
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, BufRead};
