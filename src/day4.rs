@@ -1,3 +1,4 @@
+use crate::aoc::{Aoc, AocRes};
 use regex::Regex;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
@@ -5,27 +6,20 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 pub struct Day4 {
-    pub part1: i32,
-    pub part2: i32,
+    path_to_input: String
 }
 
-impl Day4 {
-    pub fn new<P>(path_to_input: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
+impl Aoc for Day4 {
+
+    fn new(path_to_input: &String) -> Self {
         Self {
-            part1: Self::part1(&path_to_input),
-            part2: Self::part2(&path_to_input),
+            path_to_input: path_to_input.clone()
         }
     }
 
-    fn part1<P>(path_to_input: P) -> i32
-    where
-        P: AsRef<Path>,
-    {
+    fn part1(&self) -> AocRes {
         let mut answer: i32 = 0;
-        if let Ok(lines) = Self::read_lines(path_to_input) {
+        if let Ok(lines) = Self::read_lines(&self.path_to_input) {
             for line in lines {
                 if let Ok(ip) = line {
                     let parts = ip.split(": ");
@@ -81,17 +75,14 @@ impl Day4 {
                 }
             }
         }
-        answer
+        AocRes::Int32(answer)
     }
 
-    fn part2<P>(path_to_input: P) -> i32
-    where
-        P: AsRef<Path>,
-    {
+    fn part2(&self) -> AocRes {
         let mut answer: i32 = 0;
         let mut num_copies_per_card = HashMap::<i32, i32>::new();
         let mut total_cards = 1;
-        if let Ok(lines) = Self::read_lines(path_to_input) {
+        if let Ok(lines) = Self::read_lines(&self.path_to_input) {
             for line in lines {
                 if let Ok(ip) = line {
                     total_cards = total_cards + 1;
@@ -170,9 +161,13 @@ impl Day4 {
             }
         }
 
-        answer
+        AocRes::Int32(answer)
     }
 
+}
+
+impl Day4 {
+   
     fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
     where
         P: AsRef<Path>,

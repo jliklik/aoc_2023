@@ -1,3 +1,4 @@
+use crate::aoc::{Aoc, AocRes};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -11,8 +12,7 @@ use std::path::Path;
 // - This will find 5 of a kind, 4 of a kind, 3 of a kind, full house, two pair, one pair combos and high card
 
 pub struct Day7 {
-    pub part1: i32,
-    pub part2: i32,
+    path_to_input: String
 }
 
 #[derive(Eq, PartialEq, PartialOrd, Ord, Clone, Copy)]
@@ -27,16 +27,115 @@ enum HandTypes {
     HighCard(u8, u8, u8, u8, u8),
 }
 
-impl Day7 {
-    pub fn new<P>(path_to_input: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
+impl Aoc for Day7 {
+
+    fn new(path_to_input: &String) -> Self {
         Self {
-            part1: Self::part1(&path_to_input),
-            part2: Self::part2(&path_to_input),
+            path_to_input: path_to_input.clone()
         }
     }
+
+    fn part1(&self) -> AocRes {
+        let mut total_sum = 0;
+        let mut hands = Vec::<(HandTypes, i32, String)>::new();
+
+        if let Ok(lines) = Self::read_lines(&self.path_to_input) {
+            // Consumes the iterator, returns an (Optional) String
+            for line in lines {
+                if let Ok(l) = line {
+                    let mut v = l.split(" ").collect::<VecDeque<&str>>();
+                    let Some(bid) = v.pop_back() else {
+                        panic!("Could not parse bid!");
+                    };
+                    let bid = bid.to_string().parse::<i32>().unwrap();
+                    let Some(hand) = v.pop_front() else {
+                        panic!("Could not parse hand!");
+                    };
+                    let (hand_type, sorted) = Self::categorize_type_part1(hand);
+                    // hands.push((hand_type, bid, sorted));
+                    hands.push((hand_type, bid, hand.to_string()));
+                }
+            }
+        }
+
+        //hands.sort_unstable_by_key(|h| Self::hand_type_to_comparator(h.0));
+        hands.sort_unstable_by_key(|h| {
+            let v = h.2.chars().collect::<Vec<char>>();
+            let (c1, c2, c3, c4, c5) = (v[0], v[1], v[2], v[3], v[4]);
+            (
+                Self::hand_type_to_val(h.0),
+                Self::char_to_val_part1(&c1),
+                Self::char_to_val_part1(&c2),
+                Self::char_to_val_part1(&c3),
+                Self::char_to_val_part1(&c4),
+                Self::char_to_val_part1(&c5),
+            )
+        });
+        for h in &hands {
+            println!("hand: {}, bid: {}", h.2, h.1);
+        }
+        let (total_ranks, total_sum) = hands
+            .iter()
+            .fold((1, 0), |(rank, sum), (handtype, bid, hand)| {
+                (rank + 1, sum + rank * bid)
+            });
+        println!("total_sum: {}", total_sum);
+
+        AocRes::Int32(total_sum)
+    }
+
+    fn part2(&self) -> AocRes {
+        let mut total_sum = 0;
+        let mut hands = Vec::<(HandTypes, i32, String)>::new();
+
+        if let Ok(lines) = Self::read_lines(&self.path_to_input) {
+            // Consumes the iterator, returns an (Optional) String
+            for line in lines {
+                if let Ok(l) = line {
+                    let mut v = l.split(" ").collect::<VecDeque<&str>>();
+                    let Some(bid) = v.pop_back() else {
+                        panic!("Could not parse bid!");
+                    };
+                    let bid = bid.to_string().parse::<i32>().unwrap();
+                    let Some(hand) = v.pop_front() else {
+                        panic!("Could not parse hand!");
+                    };
+                    let (hand_type, sorted) = Self::categorize_type_part2(hand);
+                    // hands.push((hand_type, bid, sorted));
+                    hands.push((hand_type, bid, hand.to_string()));
+                }
+            }
+        }
+
+        //hands.sort_unstable_by_key(|h| Self::hand_type_to_comparator(h.0));
+        hands.sort_unstable_by_key(|h| {
+            let v = h.2.chars().collect::<Vec<char>>();
+            let (c1, c2, c3, c4, c5) = (v[0], v[1], v[2], v[3], v[4]);
+            (
+                Self::hand_type_to_val(h.0),
+                Self::char_to_val_part2(&c1),
+                Self::char_to_val_part2(&c2),
+                Self::char_to_val_part2(&c3),
+                Self::char_to_val_part2(&c4),
+                Self::char_to_val_part2(&c5),
+            )
+        });
+        for h in &hands {
+            println!("hand: {}, bid: {}", h.2, h.1);
+        }
+        let (total_ranks, total_sum) = hands
+            .iter()
+            .fold((1, 0), |(rank, sum), (handtype, bid, hand)| {
+                (rank + 1, sum + rank * bid)
+            });
+        println!("total_sum: {}", total_sum);
+
+        AocRes::Int32(total_sum)
+    }
+
+}
+
+impl Day7 {
 
     fn char_to_val_part1(c: &char) -> u8 {
         match c {
@@ -311,110 +410,6 @@ impl Day7 {
         let hand_type = Self::parse_char_counts(char_counts);
         // type, typedata, hand, bid
         (hand_type, sorted)
-    }
-
-    fn part1<P>(path_to_input: P) -> i32
-    where
-        P: AsRef<Path>,
-    {
-        let mut total_sum = 0;
-        let mut hands = Vec::<(HandTypes, i32, String)>::new();
-
-        if let Ok(lines) = Self::read_lines(path_to_input) {
-            // Consumes the iterator, returns an (Optional) String
-            for line in lines {
-                if let Ok(l) = line {
-                    let mut v = l.split(" ").collect::<VecDeque<&str>>();
-                    let Some(bid) = v.pop_back() else {
-                        panic!("Could not parse bid!");
-                    };
-                    let bid = bid.to_string().parse::<i32>().unwrap();
-                    let Some(hand) = v.pop_front() else {
-                        panic!("Could not parse hand!");
-                    };
-                    let (hand_type, sorted) = Self::categorize_type_part1(hand);
-                    // hands.push((hand_type, bid, sorted));
-                    hands.push((hand_type, bid, hand.to_string()));
-                }
-            }
-        }
-
-        //hands.sort_unstable_by_key(|h| Self::hand_type_to_comparator(h.0));
-        hands.sort_unstable_by_key(|h| {
-            let v = h.2.chars().collect::<Vec<char>>();
-            let (c1, c2, c3, c4, c5) = (v[0], v[1], v[2], v[3], v[4]);
-            (
-                Self::hand_type_to_val(h.0),
-                Self::char_to_val_part1(&c1),
-                Self::char_to_val_part1(&c2),
-                Self::char_to_val_part1(&c3),
-                Self::char_to_val_part1(&c4),
-                Self::char_to_val_part1(&c5),
-            )
-        });
-        for h in &hands {
-            println!("hand: {}, bid: {}", h.2, h.1);
-        }
-        let (total_ranks, total_sum) = hands
-            .iter()
-            .fold((1, 0), |(rank, sum), (handtype, bid, hand)| {
-                (rank + 1, sum + rank * bid)
-            });
-        println!("total_sum: {}", total_sum);
-
-        total_sum
-    }
-
-    fn part2<P>(path_to_input: P) -> i32
-    where
-        P: AsRef<Path>,
-    {
-        let mut total_sum = 0;
-        let mut hands = Vec::<(HandTypes, i32, String)>::new();
-
-        if let Ok(lines) = Self::read_lines(path_to_input) {
-            // Consumes the iterator, returns an (Optional) String
-            for line in lines {
-                if let Ok(l) = line {
-                    let mut v = l.split(" ").collect::<VecDeque<&str>>();
-                    let Some(bid) = v.pop_back() else {
-                        panic!("Could not parse bid!");
-                    };
-                    let bid = bid.to_string().parse::<i32>().unwrap();
-                    let Some(hand) = v.pop_front() else {
-                        panic!("Could not parse hand!");
-                    };
-                    let (hand_type, sorted) = Self::categorize_type_part2(hand);
-                    // hands.push((hand_type, bid, sorted));
-                    hands.push((hand_type, bid, hand.to_string()));
-                }
-            }
-        }
-
-        //hands.sort_unstable_by_key(|h| Self::hand_type_to_comparator(h.0));
-        hands.sort_unstable_by_key(|h| {
-            let v = h.2.chars().collect::<Vec<char>>();
-            let (c1, c2, c3, c4, c5) = (v[0], v[1], v[2], v[3], v[4]);
-            (
-                Self::hand_type_to_val(h.0),
-                Self::char_to_val_part2(&c1),
-                Self::char_to_val_part2(&c2),
-                Self::char_to_val_part2(&c3),
-                Self::char_to_val_part2(&c4),
-                Self::char_to_val_part2(&c5),
-            )
-        });
-        for h in &hands {
-            println!("hand: {}, bid: {}", h.2, h.1);
-        }
-        let (total_ranks, total_sum) = hands
-            .iter()
-            .fold((1, 0), |(rank, sum), (handtype, bid, hand)| {
-                (rank + 1, sum + rank * bid)
-            });
-        println!("total_sum: {}", total_sum);
-
-        total_sum
     }
 
     fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>

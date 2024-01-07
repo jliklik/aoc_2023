@@ -1,30 +1,24 @@
+use crate::aoc::{Aoc, AocRes};
 use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
 pub struct Day3 {
-    pub part1: i32,
-    pub part2: i32,
+    path_to_input: String
 }
 
-impl Day3 {
-    pub fn new<P>(path_to_input: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
+impl Aoc for Day3 {
+
+    fn new(path_to_input: &String) -> Self {
         Self {
-            part1: Self::part1(&path_to_input),
-            part2: Self::part2(&path_to_input),
+            path_to_input: path_to_input.clone()
         }
     }
 
-    fn part1<P>(path_to_input: P) -> i32
-    where
-        P: AsRef<Path>,
-    {
+    fn part1(&self) -> AocRes {
         let mut answer: i32 = 0;
-        let mat = Self::read_into_matrix(path_to_input);
+        let mat = Self::read_into_matrix(&self.path_to_input);
         let m = mat.len();
         let n = mat[0].len();
         // println!("rows: {}, cols: {}", m, n);
@@ -79,8 +73,18 @@ impl Day3 {
                 }
             }
         }
-        answer
+        AocRes::Int32(answer)
     }
+
+    fn part2(&self) -> AocRes {
+        let mut answer: i32 = 0;
+        AocRes::Int32(answer)
+    }
+
+
+}
+
+impl Day3 {
 
     fn read_into_matrix<P>(path_to_input: P) -> Vec<Vec<char>>
     where
@@ -98,14 +102,6 @@ impl Day3 {
         } else {
             panic!("not able to read file!")
         }
-    }
-
-    fn part2<P>(path_to_input: P) -> i32
-    where
-        P: AsRef<Path>,
-    {
-        let mut answer: i32 = 0;
-        answer
     }
 
     // The output is wrapped in a Result to allow matching on errors
