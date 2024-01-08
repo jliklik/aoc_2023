@@ -54,7 +54,7 @@ impl Aoc for Day5 {
         }
 
         while let Ok(res) = receiver.try_recv() {
-            println!("thread res: {}", res);
+            // println!("thread res: {}", res);
             answers.push(res); // push the results from receiver.recv() into the vec
         }
 
@@ -94,7 +94,7 @@ impl Day5 {
                     acc
                 }
             });
-        println!("{ret}");
+        // println!("{ret}");
         ret
     }
 

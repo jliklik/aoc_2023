@@ -71,15 +71,15 @@ impl Aoc for Day7 {
                 Self::char_to_val_part1(&c5),
             )
         });
-        for h in &hands {
-            println!("hand: {}, bid: {}", h.2, h.1);
-        }
+        // for h in &hands {
+        //     println!("hand: {}, bid: {}", h.2, h.1);
+        // }
         let (total_ranks, total_sum) = hands
             .iter()
             .fold((1, 0), |(rank, sum), (handtype, bid, hand)| {
                 (rank + 1, sum + rank * bid)
             });
-        println!("total_sum: {}", total_sum);
+        // println!("total_sum: {}", total_sum);
 
         AocRes::Int32(total_sum)
     }
@@ -120,15 +120,15 @@ impl Aoc for Day7 {
                 Self::char_to_val_part2(&c5),
             )
         });
-        for h in &hands {
-            println!("hand: {}, bid: {}", h.2, h.1);
-        }
+        // for h in &hands {
+        //     println!("hand: {}, bid: {}", h.2, h.1);
+        // }
         let (total_ranks, total_sum) = hands
             .iter()
             .fold((1, 0), |(rank, sum), (handtype, bid, hand)| {
                 (rank + 1, sum + rank * bid)
             });
-        println!("total_sum: {}", total_sum);
+        // println!("total_sum: {}", total_sum);
 
         AocRes::Int32(total_sum)
     }
@@ -314,28 +314,28 @@ impl Day7 {
             // Add joker count to the first elem count
             char_counts.reverse();
             let (top_count, top_value_char) = char_counts[0];
-            std::mem::replace(
+            let _ = std::mem::replace(
                 &mut char_counts[0],
                 (top_count + joker_count, top_value_char),
             );
             char_counts.reverse();
         }
 
-        dbg!(&char_counts);
+        // dbg!(&char_counts);
         char_counts
     }
 
     fn parse_char_counts(mut char_counts: Vec<(u8, u8)>) -> HandTypes {
         let hand_type = match char_counts.pop() {
             Some((5, c1)) => {
-                println!("5 of a kind!");
+                // println!("5 of a kind!");
                 HandTypes::FiveOfAKind(c1)
             }
             Some((4, c1)) => {
                 let Some((1, c2)) = char_counts.pop() else {
                     panic!("4 of a kind - Last card not found!");
                 };
-                println!("4 of a kind!");
+                // println!("4 of a kind!");
                 HandTypes::FourOfAKind(c1, c2)
             }
             Some((3, c1)) => match char_counts.pop() {
@@ -353,7 +353,7 @@ impl Day7 {
                     let Some((1, c3)) = char_counts.pop() else {
                         panic!("Two pair - Last card not found!");
                     };
-                    println!("2 pair");
+                    // println!("2 pair");
                     HandTypes::TwoPair(c1, c2, c3)
                 }
                 Some((1, c2)) => {
@@ -363,7 +363,7 @@ impl Day7 {
                     let Some((1, c4)) = char_counts.pop() else {
                         panic!("Two pair - 4th card not found!");
                     };
-                    println!("1 pair");
+                    // println!("1 pair");
                     HandTypes::OnePair(c1, c2, c3, c4)
                 }
                 _ => HandTypes::Unknown,
@@ -381,11 +381,11 @@ impl Day7 {
                 let Some((1, c5)) = char_counts.pop() else {
                     panic!("High card - 5th card not found!");
                 };
-                println!("high card");
+                // println!("high card");
                 HandTypes::HighCard(c1, c2, c3, c4, c5)
             }
             _ => {
-                println!("unknown");
+                // println!("unknown");
                 HandTypes::Unknown
             }
         };
