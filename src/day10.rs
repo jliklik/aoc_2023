@@ -152,24 +152,28 @@ impl Day10 {
 
     let mut possible_starts = Vec::<(char, usize, usize)>::new();
 
-    let (x, y) = Self::go_north(start);
-    if Self::valid((x, y), matrix) && vec!['|', '7', 'F'].contains(&matrix[y][x]) {
-      possible_starts.push((matrix[y][x], x, y))
+    if let Some((x, y)) = Self::go_north(start) {
+      if Self::valid((x, y), matrix) && vec!['|', '7', 'F'].contains(&matrix[y][x]) {
+        possible_starts.push((matrix[y][x], x, y))
+      }
     }
 
-    let (x, y) = Self::go_south(start);
-    if Self::valid((x, y), matrix) && vec!['|', 'L', 'J'].contains(&matrix[y][x]) {
-      possible_starts.push((matrix[y][x], x, y))
+    if let Some((x, y)) = Self::go_south(start) {
+      if Self::valid((x, y), matrix) && vec!['|', 'L', 'J'].contains(&matrix[y][x]) {
+        possible_starts.push((matrix[y][x], x, y))
+      }
     }
 
-    let (x, y) = Self::go_east(start);
-    if Self::valid((x, y), matrix) && vec!['-', 'J', '7'].contains(&matrix[y][x]) {
-      possible_starts.push((matrix[y][x], x, y))
+    if let Some((x, y)) = Self::go_east(start) {
+      if Self::valid((x, y), matrix) && vec!['-', 'J', '7'].contains(&matrix[y][x]) {
+        possible_starts.push((matrix[y][x], x, y))
+      }
     }
 
-    let (x, y) = Self::go_west(start);
-    if Self::valid((x, y), matrix) && vec!['-', 'L', 'F'].contains(&matrix[y][x]) {
-      possible_starts.push((matrix[y][x], x, y))
+    if let Some((x, y)) = Self::go_west(start) {
+      if Self::valid((x, y), matrix) && vec!['-', 'L', 'F'].contains(&matrix[y][x]) {
+        possible_starts.push((matrix[y][x], x, y))
+      }
     }
 
     possible_starts
@@ -229,25 +233,25 @@ impl Day10 {
     }
   }
 
-  fn go_east(a: (usize, usize)) -> (usize, usize) {(a.0 + 1, a.1)}
+  fn go_east(a: (usize, usize)) -> Option<(usize, usize)> {Some((a.0 + 1, a.1))}
 
-  fn go_west(a: (usize, usize)) -> (usize, usize) {
+  fn go_west(a: (usize, usize)) -> Option<(usize, usize)> {
     if a.0 >= 1 {
-      (a.0 - 1, a.1)
-    } else {
-      (a.0, a.1)
+      Some((a.0 - 1, a.1))
+    } else { 
+      None
     }
   }
 
-  fn go_north(a: (usize, usize)) -> (usize, usize) {
+  fn go_north(a: (usize, usize)) -> Option<(usize, usize)> {
     if a.1 >= 1 {
-      (a.0, a.1 - 1)
-    } else {
-      (a.0, a.1)
+      Some((a.0, a.1 - 1))
+    } else { 
+      None
     }    
   }
 
-  fn go_south(a: (usize, usize)) -> (usize, usize) {(a.0, a.1 + 1)}
+  fn go_south(a: (usize, usize)) -> Option<(usize, usize)> {Some((a.0, a.1 + 1))}
 
   fn valid(a: (usize, usize), matrix: &Vec<Vec<char>>) -> bool {
     if a.1 >= matrix.len() || a.0 >= matrix[0].len() {
@@ -262,7 +266,7 @@ impl Day10 {
 
     dbg!(symbol);
 
-    match symbol {
+    let Some(pos) = (match symbol {
       '-' => {
         match Self::position(prev_position, symbol_position) {
           Position::West => Self::go_east(symbol_position),
@@ -306,7 +310,11 @@ impl Day10 {
         }
       }
       _ => panic!("Unrecognized symbol!")
-    }
+    }) else {
+      panic!("Pipe is taking us out of bounds!!");
+    };
+
+    pos
   }
 
 }
