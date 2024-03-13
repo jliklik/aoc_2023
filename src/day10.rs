@@ -47,28 +47,63 @@ impl Aoc for Day10 {
       let start = Self::find_start(&matrix);
       let possible_dirs = Self::find_possible_directions_around_start(start, &matrix);
 
+      dbg!(&start);
+      dbg!(&possible_dirs);
+
       if possible_dirs.len() > 2 {
         panic!("Assume only 2 directions that S connects to...")
       } else {
+        let worker_result_1 = Arc::new(Mutex::new((0, 0, 0)));
+        let worker_result_2 = Arc::new(Mutex::new((0, 0, 0)));
+        let worker_result_1_copy = worker_result_1.clone();
+        let worker_result_2_copy = worker_result_2.clone();
 
-        let mut worker_result = VecDeque::<Arc::<Mutex<(usize, usize, i32)>>>::new();
-        worker_result.push_back(Arc::new(Mutex::new((0, 0, 0))));
-        worker_result.push_back(Arc::new(Mutex::new((0, 0, 0))));
-  
-        let mut children = Vec::new();
+        let matrix_ref_1 = Arc::new(matrix);
+        let matrix_ref_2 = matrix_ref_1.clone();
 
-        for id in 0..2 {
-          let adjacent_to_start_pos = (possible_dirs[id].1, possible_dirs[id].2);
-          let child = thread::spawn(move || 
-            {
-              Self::follow_loop(Arc::clone(&worker_result[id]), adjacent_to_start_pos, adjacent_to_start_pos, start, &matrix, 1);
-            }
-          );
-          children.push(child);
+        let adjacent_to_start_pos_1 = (possible_dirs[0].1, possible_dirs[0].2);
+        let child_1 = thread::spawn(move || 
+          {
+            Self::follow_loop(Arc::clone(&worker_result_1), adjacent_to_start_pos_1, adjacent_to_start_pos_1, start, matrix_ref_1, 1);
+          }
+        );
+        // let adjacent_to_start_pos_2 = (possible_dirs[1].1, possible_dirs[1].2);
+        // let child_2 = thread::spawn(move || 
+        //   {
+        //     Self::follow_loop(Arc::clone(&worker_result_2), adjacent_to_start_pos_2, adjacent_to_start_pos_2, start, matrix_ref_2, 1);
+        //   }
+        // );
+
+        while true {
+          let mut result_1 = *worker_result_1_copy.lock().unwrap();
+          let ten_millis = std::time::Duration::from_millis(10);
+
+          while result_1.2 == 0 {
+            drop(result_1);
+            std::thread::sleep(ten_millis);
+            result_1 = *worker_result_1_copy.lock().unwrap();
+          }
+
+          let mut result_2 = *worker_result_2_copy.lock().unwrap();
+          while result_2.2 == 0 {
+            drop(result_2);
+            std::thread::sleep(ten_millis);
+            result_2 = *worker_result_2_copy.lock().unwrap();
+          }
+
+          dbg!((result_1, result_2));
+
+          // If same location and same step count, then we have found the midpoint
+          if result_1 == result_2 {
+            ans = result_1.2;
+            break;
+          }
+
         }
-      }
 
-    
+        let _ = child_1.join();
+        // let _ = child_2.join();
+      }    
     }
 
     AocRes::Int32(ans)
@@ -103,10 +138,10 @@ impl Day10 {
 
   fn find_start(matrix: &Vec<Vec<char>>) -> (usize, usize) {
     let mut start: (usize, usize) = (0, 0);
-    for r in 0..matrix.len() {
-      for c in 0..matrix[r].len() {
-        if matrix[r][c] == 'S' {
-          start = (r, c)
+    for y in 0..matrix.len() {
+      for x in 0..matrix[y].len() {
+        if matrix[y][x] == 'S' {
+          start = (x, y)
         }        
       }
     }
@@ -118,37 +153,39 @@ impl Day10 {
     let mut possible_starts = Vec::<(char, usize, usize)>::new();
 
     let (x, y) = Self::go_north(start);
-    if Self::valid((x, y), matrix) && vec!['|', '7', 'F'].contains(&matrix[x][y]) {
-      possible_starts.push((matrix[x][y], x, y))
+    if Self::valid((x, y), matrix) && vec!['|', '7', 'F'].contains(&matrix[y][x]) {
+      possible_starts.push((matrix[y][x], x, y))
     }
 
     let (x, y) = Self::go_south(start);
-    if Self::valid((x, y), matrix) && vec!['|', 'L', 'J'].contains(&matrix[x][y]) {
-      possible_starts.push((matrix[x][y], x, y))
+    if Self::valid((x, y), matrix) && vec!['|', 'L', 'J'].contains(&matrix[y][x]) {
+      possible_starts.push((matrix[y][x], x, y))
     }
 
     let (x, y) = Self::go_east(start);
-    if Self::valid((x, y), matrix) && vec!['-', 'J', '7'].contains(&matrix[x][y]) {
-      possible_starts.push((matrix[x][y], x, y))
+    if Self::valid((x, y), matrix) && vec!['-', 'J', '7'].contains(&matrix[y][x]) {
+      possible_starts.push((matrix[y][x], x, y))
     }
 
     let (x, y) = Self::go_west(start);
-    if Self::valid((x, y), matrix) && vec!['-', 'L', 'F'].contains(&matrix[x][y]) {
-      possible_starts.push((matrix[x][y], x, y))
+    if Self::valid((x, y), matrix) && vec!['-', 'L', 'F'].contains(&matrix[y][x]) {
+      possible_starts.push((matrix[y][x], x, y))
     }
 
     possible_starts
   }
 
-  fn follow_loop(worker_result: Arc<Mutex<(usize, usize, i32)>>, start_pos: (usize, usize), current_pos: (usize, usize), prev_pos: (usize, usize), matrix: &Vec<Vec<char>>, count: i32) {
+  fn follow_loop(worker_result: Arc<Mutex<(usize, usize, i32)>>, start_pos: (usize, usize), current_pos: (usize, usize), prev_pos: (usize, usize), matrix: Arc<Vec<Vec<char>>>, count: i32) {
     
-    match Self::do_follow_loop(start_pos, current_pos, prev_pos, matrix) {
+    match Self::do_follow_loop(start_pos, current_pos, prev_pos, matrix.clone()) {
       Some((next_x, next_y)) => {
         
         // let boss know result
         let mut result = *worker_result.lock().unwrap();
+        let ten_millis = std::time::Duration::from_millis(10);
         while result.2 != 0 {
           drop(result);
+          std::thread::sleep(ten_millis);
           result = *worker_result.lock().unwrap();
         }
 
@@ -162,8 +199,8 @@ impl Day10 {
     }
   }
 
-  fn do_follow_loop(start_pos: (usize, usize), current_pos: (usize, usize), prev_pos: (usize, usize), matrix: &Vec<Vec<char>>) -> Option<(usize, usize)> {
-    let next_pos = Self::next_position(matrix[current_pos.0][current_pos.1], current_pos, prev_pos);
+  fn do_follow_loop(start_pos: (usize, usize), current_pos: (usize, usize), prev_pos: (usize, usize), matrix: Arc<Vec<Vec<char>>>) -> Option<(usize, usize)> {
+    let next_pos = Self::next_position(matrix[current_pos.1][current_pos.0], current_pos, prev_pos);
     if next_pos == start_pos {
       None
     } else {
@@ -171,20 +208,21 @@ impl Day10 {
     }
   }
 
+  // where is a relative to b?
   fn position(a: (usize, usize), b: (usize, usize)) -> Position {
-    if a.0 == b.0 - 1 && a.1 == b.1 {
+    if a.0 + 1 == b.0 && a.1 == b.1 {
       Position::West
     } else if a.0 == b.0 + 1 && a.1 == b.1 {
       Position::East
-    } else if a.0 == b.0 && a.1 == b.1 - 1 {
+    } else if a.0 == b.0 && a.1 + 1 == b.1 {
       Position::North
     } else if a.0 == b.0 && a.1 == b.1 + 1 {
       Position::South
-    } else if a.0 == b.0 - 1 && a.1 == b.1 - 1 {
+    } else if a.0 + 1 == b.0 && a.1 + 1 == b.1 {
       Position::NorthWest
-    } else if a.0 == b.0 + 1 && a.1 == b.1 - 1 {
+    } else if a.0 == b.0 + 1 && a.1 + 1 == b.1 {
       Position::NorthEast
-    } else if a.0 == b.0 - 1 && a.1 == b.1 + 1 {
+    } else if a.0 + 1 == b.0 && a.1 == b.1 + 1 {
       Position::SouthWest
     } else {
       Position::SouthEast
@@ -193,14 +231,26 @@ impl Day10 {
 
   fn go_east(a: (usize, usize)) -> (usize, usize) {(a.0 + 1, a.1)}
 
-  fn go_west(a: (usize, usize)) -> (usize, usize) {(a.0 - 1, a.1)}
+  fn go_west(a: (usize, usize)) -> (usize, usize) {
+    if a.0 >= 1 {
+      (a.0 - 1, a.1)
+    } else {
+      (a.0, a.1)
+    }
+  }
 
-  fn go_north(a: (usize, usize)) -> (usize, usize) {(a.0, a.1 - 1)}
+  fn go_north(a: (usize, usize)) -> (usize, usize) {
+    if a.1 >= 1 {
+      (a.0, a.1 - 1)
+    } else {
+      (a.0, a.1)
+    }    
+  }
 
   fn go_south(a: (usize, usize)) -> (usize, usize) {(a.0, a.1 + 1)}
 
   fn valid(a: (usize, usize), matrix: &Vec<Vec<char>>) -> bool {
-    if a.0 < 0 || a.1 < 0 || a.1 >= matrix.len() || a.0 >= matrix[0].len() {
+    if a.1 >= matrix.len() || a.0 >= matrix[0].len() {
       false
     } else {
       true
@@ -209,6 +259,9 @@ impl Day10 {
 
   fn next_position(symbol: char, symbol_position: (usize, usize), prev_position: (usize, usize)) -> (usize, usize) 
   {
+
+    dbg!(symbol);
+
     match symbol {
       '-' => {
         match Self::position(prev_position, symbol_position) {
