@@ -1,14 +1,19 @@
 use crate::aoc::{Aoc, AocRes};
-use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Condvar};
 use std::thread;
 
 
 pub struct Day10 {
   path_to_input: String
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+struct Coordinate {
+  x: usize,
+  y: usize
 }
 
 impl Aoc for Day10 {
@@ -53,6 +58,10 @@ impl Aoc for Day10 {
       if possible_dirs.len() > 2 {
         panic!("Assume only 2 directions that S connects to...")
       } else {
+
+        let pair = Arc::new((Mutex::new((0, 0, 0)), Condvar::new()));
+
+
         let worker_result_1 = Arc::new(Mutex::new((0, 0, 0)));
         let worker_result_2 = Arc::new(Mutex::new((0, 0, 0)));
         let worker_result_1_copy = worker_result_1.clone();
@@ -61,10 +70,14 @@ impl Aoc for Day10 {
         let matrix_ref_1 = Arc::new(matrix);
         let matrix_ref_2 = matrix_ref_1.clone();
 
-        let adjacent_to_start_pos_1 = (possible_dirs[0].1, possible_dirs[0].2);
+        let adjacent_to_start_pos_1 = Coordinate{
+          x: possible_dirs[0].1.x, 
+          y: possible_dirs[0].1.y
+        };
+
         let child_1 = thread::spawn(move || 
           {
-            Self::follow_loop(Arc::clone(&worker_result_1), adjacent_to_start_pos_1, adjacent_to_start_pos_1, start, matrix_ref_1, 1);
+            Self::follow_loop(Arc::clone(&worker_result_1), start, adjacent_to_start_pos_1,  start, matrix_ref_1, 1);
           }
         );
         // let adjacent_to_start_pos_2 = (possible_dirs[1].1, possible_dirs[1].2);
@@ -136,53 +149,57 @@ impl Day10 {
       Ok(io::BufReader::new(file).lines())
   }
 
-  fn find_start(matrix: &Vec<Vec<char>>) -> (usize, usize) {
-    let mut start: (usize, usize) = (0, 0);
+  fn find_start(matrix: &Vec<Vec<char>>) -> Coordinate {
+    let mut start: Coordinate = Coordinate {
+      x: 0,
+      y: 0
+    };
     for y in 0..matrix.len() {
       for x in 0..matrix[y].len() {
         if matrix[y][x] == 'S' {
-          start = (x, y)
+          start.x = x;
+          start.y = y;
         }        
       }
     }
     start
   }
 
-  fn find_possible_directions_around_start(start: (usize, usize), matrix: &Vec<Vec<char>>) -> Vec::<(char, usize, usize)> {
+  fn find_possible_directions_around_start(start: Coordinate, matrix: &Vec<Vec<char>>) -> Vec::<(char, Coordinate)> {
 
-    let mut possible_starts = Vec::<(char, usize, usize)>::new();
+    let mut possible_starts = Vec::<(char, Coordinate)>::new();
 
-    if let Some((x, y)) = Self::go_north(start) {
-      if Self::valid((x, y), matrix) && vec!['|', '7', 'F'].contains(&matrix[y][x]) {
-        possible_starts.push((matrix[y][x], x, y))
+    if let Some(c) = Self::go_north(start) {
+      if Self::valid(c, matrix) && vec!['|', '7', 'F'].contains(&matrix[c.y][c.x]) {
+        possible_starts.push((matrix[c.y][c.x], c))
       }
     }
 
-    if let Some((x, y)) = Self::go_south(start) {
-      if Self::valid((x, y), matrix) && vec!['|', 'L', 'J'].contains(&matrix[y][x]) {
-        possible_starts.push((matrix[y][x], x, y))
+    if let Some(c) = Self::go_south(start) {
+      if Self::valid(c, matrix) && vec!['|', 'L', 'J'].contains(&matrix[c.y][c.x]) {
+        possible_starts.push((matrix[c.y][c.x], c))
       }
     }
 
-    if let Some((x, y)) = Self::go_east(start) {
-      if Self::valid((x, y), matrix) && vec!['-', 'J', '7'].contains(&matrix[y][x]) {
-        possible_starts.push((matrix[y][x], x, y))
+    if let Some(c) = Self::go_east(start) {
+      if Self::valid(c, matrix) && vec!['-', 'J', '7'].contains(&matrix[c.y][c.x]) {
+        possible_starts.push((matrix[c.y][c.x], c))
       }
     }
 
-    if let Some((x, y)) = Self::go_west(start) {
-      if Self::valid((x, y), matrix) && vec!['-', 'L', 'F'].contains(&matrix[y][x]) {
-        possible_starts.push((matrix[y][x], x, y))
+    if let Some(c) = Self::go_west(start) {
+      if Self::valid(c, matrix) && vec!['-', 'L', 'F'].contains(&matrix[c.y][c.x]) {
+        possible_starts.push((matrix[c.y][c.x], c))
       }
     }
 
     possible_starts
   }
 
-  fn follow_loop(worker_result: Arc<Mutex<(usize, usize, i32)>>, start_pos: (usize, usize), current_pos: (usize, usize), prev_pos: (usize, usize), matrix: Arc<Vec<Vec<char>>>, count: i32) {
+  fn follow_loop(worker_result: Arc<Mutex<(usize, usize, i32)>>, start_pos: Coordinate, current_pos: Coordinate, prev_pos: Coordinate, matrix: Arc<Vec<Vec<char>>>, count: i32) {
     
     match Self::do_follow_loop(start_pos, current_pos, prev_pos, matrix.clone()) {
-      Some((next_x, next_y)) => {
+      Some(next_coordinate) => {
         
         // let boss know result
         let mut result = *worker_result.lock().unwrap();
@@ -193,18 +210,18 @@ impl Day10 {
           result = *worker_result.lock().unwrap();
         }
 
-        result = (next_x, next_y, count + 1);
+        result = (next_coordinate.x, next_coordinate.y, count + 1);
         // allow boss to continue
         drop(result);
 
-        Self::follow_loop(worker_result, start_pos, (next_x, next_y), current_pos, matrix, count + 1)
+        Self::follow_loop(worker_result, start_pos, next_coordinate, current_pos, matrix, count + 1)
       }
       _ => () // finished
     }
   }
 
-  fn do_follow_loop(start_pos: (usize, usize), current_pos: (usize, usize), prev_pos: (usize, usize), matrix: Arc<Vec<Vec<char>>>) -> Option<(usize, usize)> {
-    let next_pos = Self::next_position(matrix[current_pos.1][current_pos.0], current_pos, prev_pos);
+  fn do_follow_loop(start_pos: Coordinate, current_pos: Coordinate, prev_pos: Coordinate, matrix: Arc<Vec<Vec<char>>>) -> Option<Coordinate> {
+    let next_pos = Self::next_position(matrix[current_pos.y][current_pos.x], current_pos, prev_pos);
     if next_pos == start_pos {
       None
     } else {
@@ -212,56 +229,76 @@ impl Day10 {
     }
   }
 
-  // where is a relative to b?
-  fn position(a: (usize, usize), b: (usize, usize)) -> Position {
-    if a.0 + 1 == b.0 && a.1 == b.1 {
+  // where is c1 relative to c2?
+  fn position(c1: Coordinate, c2: Coordinate) -> Position {
+    if c1.x + 1 == c2.x && c1.y == c2.y {
       Position::West
-    } else if a.0 == b.0 + 1 && a.1 == b.1 {
+    } else if c1.x == c2.x + 1 && c1.y == c2.y {
       Position::East
-    } else if a.0 == b.0 && a.1 + 1 == b.1 {
+    } else if c1.x == c2.x && c1.y + 1 == c2.y {
       Position::North
-    } else if a.0 == b.0 && a.1 == b.1 + 1 {
+    } else if c1.x == c2.x && c1.y == c2.y + 1 {
       Position::South
-    } else if a.0 + 1 == b.0 && a.1 + 1 == b.1 {
+    } else if c1.x + 1 == c2.x && c1.y + 1 == c2.y {
       Position::NorthWest
-    } else if a.0 == b.0 + 1 && a.1 + 1 == b.1 {
+    } else if c1.x == c2.x + 1 && c1.y + 1 == c2.y {
       Position::NorthEast
-    } else if a.0 + 1 == b.0 && a.1 == b.1 + 1 {
+    } else if c1.x + 1 == c2.x && c1.y == c2.y + 1 {
       Position::SouthWest
     } else {
       Position::SouthEast
     }
   }
 
-  fn go_east(a: (usize, usize)) -> Option<(usize, usize)> {Some((a.0 + 1, a.1))}
+  fn go_east(c: Coordinate) -> Option<Coordinate> {
+    Some(
+      Coordinate{
+        x: c.x + 1,
+        y: c.y
+      }
+    )}
 
-  fn go_west(a: (usize, usize)) -> Option<(usize, usize)> {
-    if a.0 >= 1 {
-      Some((a.0 - 1, a.1))
+  fn go_west(c: Coordinate) -> Option<Coordinate> {
+    if c.x >= 1 {
+      Some(
+        Coordinate {
+          x: c.x - 1,
+          y: c.y
+        }
+      )
     } else { 
       None
     }
   }
 
-  fn go_north(a: (usize, usize)) -> Option<(usize, usize)> {
-    if a.1 >= 1 {
-      Some((a.0, a.1 - 1))
+  fn go_north(c: Coordinate) -> Option<Coordinate> {
+    if c.y >= 1 {
+      Some(
+        Coordinate{
+          x: c.x,
+          y: c.y - 1
+      })
     } else { 
       None
     }    
   }
 
-  fn go_south(a: (usize, usize)) -> Option<(usize, usize)> {Some((a.0, a.1 + 1))}
+  fn go_south(c: Coordinate) -> Option<Coordinate> {
+    Some(Coordinate{
+      x: c.x,
+      y: c.y + 1
+    })
+  }
 
-  fn valid(a: (usize, usize), matrix: &Vec<Vec<char>>) -> bool {
-    if a.1 >= matrix.len() || a.0 >= matrix[0].len() {
+  fn valid(c: Coordinate, matrix: &Vec<Vec<char>>) -> bool {
+    if c.y >= matrix.len() || c.x >= matrix[0].len() {
       false
     } else {
       true
     }
   }
 
-  fn next_position(symbol: char, symbol_position: (usize, usize), prev_position: (usize, usize)) -> (usize, usize) 
+  fn next_position(symbol: char, symbol_position: Coordinate, prev_position: Coordinate) -> Coordinate 
   {
 
     dbg!(symbol);
