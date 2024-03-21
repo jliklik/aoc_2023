@@ -8,6 +8,7 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
+mod day10;
 
 use aoc::Aoc;
 use day1::Day1;
@@ -19,6 +20,7 @@ use day6::Day6;
 use day7::Day7;
 use day8::Day8;
 use day9::Day9;
+use day10::Day10;
 
 fn main() {
 
@@ -33,6 +35,8 @@ fn main() {
     aoc.push(Box::new(Day7::new(&"./inputs/day7.input".to_string())));
     aoc.push(Box::new(Day8::new(&"./inputs/day8.input".to_string())));
     aoc.push(Box::new(Day9::new(&"./inputs/day9.input".to_string())));
+    aoc.push(Box::new(Day10::new(&"./inputs/day10.input".to_string())));
+
 
     aoc.into_iter().fold(1, |acc, el| {
         println!("day{} - part1: {}", acc, el.part1());
