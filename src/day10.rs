@@ -16,6 +16,12 @@ struct Coordinate {
   y: usize
 }
 
+#[derive(Debug, Clone)]
+struct Step {
+  coord: Coordinate,
+  value: i32
+}
+
 impl Aoc for Day10 {
 
   fn new(path_to_input: &String) -> Self {
@@ -52,69 +58,85 @@ impl Aoc for Day10 {
       let start = Self::find_start(&matrix);
       let possible_dirs = Self::find_possible_directions_around_start(start, &matrix);
 
-      dbg!(&start);
-      dbg!(&possible_dirs);
-
       if possible_dirs.len() > 2 {
         panic!("Assume only 2 directions that S connects to...")
       } else {
 
-        let pair = Arc::new((Mutex::new((0, 0, 0)), Condvar::new()));
+        let initial_step = Step {
+          coord: Coordinate {
+            x: 0, y: 0
+          },
+          value: 0
+        };
+        let pair1 = Arc::new((Mutex::new(initial_step.clone()), Condvar::new()));
+        let pair2: Arc<(Mutex<Step>, Condvar)> = Arc::new((Mutex::new(initial_step.clone()), Condvar::new()));
+        let pair1_copy = Arc::clone(&pair1);
+        let pair2_copy = Arc::clone(&pair2);
 
-
-        let worker_result_1 = Arc::new(Mutex::new((0, 0, 0)));
-        let worker_result_2 = Arc::new(Mutex::new((0, 0, 0)));
-        let worker_result_1_copy = worker_result_1.clone();
-        let worker_result_2_copy = worker_result_2.clone();
-
-        let matrix_ref_1 = Arc::new(matrix);
-        let matrix_ref_2 = matrix_ref_1.clone();
+        let matrix_ref = Arc::new(matrix);
+        let matrix_ref_1 = Arc::clone(&matrix_ref);
+        let matrix_ref_2 = Arc::clone(&matrix_ref);
 
         let adjacent_to_start_pos_1 = Coordinate{
           x: possible_dirs[0].1.x, 
           y: possible_dirs[0].1.y
         };
 
+        let adjacent_to_start_pos_2 =  Coordinate{
+          x: possible_dirs[1].1.x, 
+          y: possible_dirs[1].1.y
+        };
+
         let child_1 = thread::spawn(move || 
           {
-            Self::follow_loop(Arc::clone(&worker_result_1), start, adjacent_to_start_pos_1,  start, matrix_ref_1, 1);
+            Self::follow_loop(1, pair1_copy, start, adjacent_to_start_pos_1,  start, matrix_ref_1, 1);
           }
         );
-        // let adjacent_to_start_pos_2 = (possible_dirs[1].1, possible_dirs[1].2);
-        // let child_2 = thread::spawn(move || 
-        //   {
-        //     Self::follow_loop(Arc::clone(&worker_result_2), adjacent_to_start_pos_2, adjacent_to_start_pos_2, start, matrix_ref_2, 1);
-        //   }
-        // );
 
-        while true {
-          let mut result_1 = *worker_result_1_copy.lock().unwrap();
-          let ten_millis = std::time::Duration::from_millis(10);
-
-          while result_1.2 == 0 {
-            drop(result_1);
-            std::thread::sleep(ten_millis);
-            result_1 = *worker_result_1_copy.lock().unwrap();
+        let child_2 = thread::spawn(move || 
+          {
+            Self::follow_loop(2, pair2_copy, start, adjacent_to_start_pos_2, start, matrix_ref_2, 1);
           }
+        );
 
-          let mut result_2 = *worker_result_2_copy.lock().unwrap();
-          while result_2.2 == 0 {
-            drop(result_2);
-            std::thread::sleep(ten_millis);
-            result_2 = *worker_result_2_copy.lock().unwrap();
+        loop {
+
+          let (lock1, cvar1) = &*pair1;
+          let mut result1 = lock1.lock().unwrap();
+          while (*result1).value == 0 {
+            result1 = cvar1.wait(result1).unwrap();
+            // println!("master read value1: {}", (*result1).value);
           }
+          let res1_copy: i32 = (*result1).value;
+          (*result1).value = 0; // allow thread to proceed
 
-          dbg!((result_1, result_2));
+
+          let (lock2, cvar2) = &*pair2;
+          let mut result2 = lock2.lock().unwrap();
+          while (*result2).value == 0 {
+            result2 = cvar2.wait(result2).unwrap();
+            // println!("master read value2: {}", (*result2).value);
+          }
+          let res2_copy: i32 = (*result2).value;
+          (*result2).value = 0; // allow thread to proceed
+
+          cvar1.notify_one();
+          cvar2.notify_one();
 
           // If same location and same step count, then we have found the midpoint
-          if result_1 == result_2 {
-            ans = result_1.2;
+          if ((*result2).coord == (*result1).coord) && (res1_copy == res2_copy) {
+            println!("found solution: {}", res1_copy);
+            ans = res1_copy;
+            break;
+          }
+
+          if res1_copy == -1 || res2_copy == -1 {
             break;
           }
 
         }
 
-        let _ = child_1.join();
+        // let _ = child_1.join();
         // let _ = child_2.join();
       }    
     }
@@ -196,36 +218,36 @@ impl Day10 {
     possible_starts
   }
 
-  fn follow_loop(worker_result: Arc<Mutex<(usize, usize, i32)>>, start_pos: Coordinate, current_pos: Coordinate, prev_pos: Coordinate, matrix: Arc<Vec<Vec<char>>>, count: i32) {
+  fn follow_loop(thread_num: u8, pair: Arc<(Mutex<Step>, Condvar)>, start_pos: Coordinate, mut current_pos: Coordinate, mut prev_pos: Coordinate, matrix: Arc<Vec<Vec<char>>>, mut count: i32) {
     
-    match Self::do_follow_loop(start_pos, current_pos, prev_pos, matrix.clone()) {
-      Some(next_coordinate) => {
-        
-        // let boss know result
-        let mut result = *worker_result.lock().unwrap();
-        let ten_millis = std::time::Duration::from_millis(10);
-        while result.2 != 0 {
-          drop(result);
-          std::thread::sleep(ten_millis);
-          result = *worker_result.lock().unwrap();
-        }
-
-        result = (next_coordinate.x, next_coordinate.y, count + 1);
-        // allow boss to continue
-        drop(result);
-
-        Self::follow_loop(worker_result, start_pos, next_coordinate, current_pos, matrix, count + 1)
+    loop {
+      let (lock, cvar) = &*pair;
+      let mut result = lock.lock().unwrap();
+      while (*result).value != 0 {
+        result = cvar.wait(result).unwrap();
       }
-      _ => () // finished
-    }
-  }
 
-  fn do_follow_loop(start_pos: Coordinate, current_pos: Coordinate, prev_pos: Coordinate, matrix: Arc<Vec<Vec<char>>>) -> Option<Coordinate> {
-    let next_pos = Self::next_position(matrix[current_pos.y][current_pos.x], current_pos, prev_pos);
-    if next_pos == start_pos {
-      None
-    } else {
-      Some(next_pos)
+      let next_pos = Self::next_position(matrix[current_pos.y][current_pos.x], current_pos, prev_pos);
+      
+      println!("thread {}, next pos - x: {} y: {}", thread_num, next_pos.x, next_pos.y);
+
+      if next_pos == start_pos {
+        *result = Step{
+          coord: Coordinate {x: next_pos.x, y: next_pos.y},
+          value: -1
+        };
+        cvar.notify_one(); 
+        break;
+      } else {
+        *result = Step{
+          coord: Coordinate {x: next_pos.x, y: next_pos.y},
+          value: count + 1
+        };
+        cvar.notify_one();  
+        count +=1; 
+        prev_pos = current_pos;
+        current_pos = next_pos;
+      }
     }
   }
 
@@ -300,9 +322,6 @@ impl Day10 {
 
   fn next_position(symbol: char, symbol_position: Coordinate, prev_position: Coordinate) -> Coordinate 
   {
-
-    dbg!(symbol);
-
     let Some(pos) = (match symbol {
       '-' => {
         match Self::position(prev_position, symbol_position) {
@@ -353,5 +372,21 @@ impl Day10 {
 
     pos
   }
+
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn part1_works_on_sample_input() {
+        let day10 = Day10::new(&"./inputs/day10_test.input".to_string());
+        let AocRes::Int32(res) = day10.part1() else {
+            panic!("Failed to get result from part 1!")
+        };
+        assert!(res == 8);
+    }
 
 }

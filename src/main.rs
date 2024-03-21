@@ -35,7 +35,7 @@ fn main() {
     aoc.push(Box::new(Day7::new(&"./inputs/day7.input".to_string())));
     aoc.push(Box::new(Day8::new(&"./inputs/day8.input".to_string())));
     aoc.push(Box::new(Day9::new(&"./inputs/day9.input".to_string())));
-    aoc.push(Box::new(Day10::new(&"./inputs/day10_test.input".to_string())));
+    aoc.push(Box::new(Day10::new(&"./inputs/day10.input".to_string())));
 
 
     aoc.into_iter().fold(1, |acc, el| {
